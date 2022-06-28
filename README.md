@@ -15,10 +15,18 @@ import requests
 url_awal = "https://bimasislam.kemenag.go.id/jadwalshalat"
 
 sesi = requests.session()
-inisialisasi = sesi.get(url_awal)
 
+# ini adalah inisialisasi awal untuk mendapatkan cookies
+# <option></option> masih belum di tampilkan oleh server
+inisialisasi = sesi.get(url_awal)
 data_cookies = inisialisasi.cookies
 
+# ini adalah request kedua setelah kita mendapatkan cookies
+# <option></option> sudah di tampilkan oleh server
+ada = sesi.get(url_awal)
+print(sesi.content)
 
-
+# ... <select id="search_prov">\n\t
+# <option value=\'<token>\'  >PUSAT</option> ...
+# <select> ...
 ```
