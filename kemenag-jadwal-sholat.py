@@ -149,10 +149,6 @@ class Sholat:
                 sebulan["data"] = {
                     waktu: sebulan["data"].get(waktu)
                 }
-            else:
-                print("Gk ada", waktu, sebulan["data"].get(waktu))
-
-
             
             return sebulan
 
