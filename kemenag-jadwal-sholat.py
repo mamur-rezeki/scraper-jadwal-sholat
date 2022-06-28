@@ -1,108 +1,160 @@
-import os
 import requests
 from urllib.parse import urlparse, quote, unquote
 from bs4 import BeautifulSoup as Soup
 
-GET = "GET"
-POST = "POST"
-store = {}
-sesi = requests.session()
+class Sholat:
+    def __init__(self) -> None:
+        self.GET = "GET"
+        self.POST = "POST"
 
+        self.cookies = None
+        self.session = requests.session()
+        self.history = None
 
-def req_json(url, method, *args, **kwargs):
-    urlp = urlparse(url)
-    global store
-    global sesi
+        self.url_utama = "https://bimasislam.kemenag.go.id/jadwalshalat"
+        self.url_kabupaten = "https://bimasislam.kemenag.go.id/ajax/getKabkoshalat"
+        self.url_jadwal = "https://bimasislam.kemenag.go.id/ajax/getShalatbln"
 
-    if urlp.hostname not in store:
-        store[urlp.hostname] = {}
+        self.history = self.get(self.url_utama)
+        self.cookies = self.history.cookies
 
-    if "cookies" not in kwargs and urlp.hostname in store:
-        kwargs["cookies"] = store[urlp.hostname] 
+        self.jadwal = {}
+        self.data_daerah = {}
+        self.load_daerah()
+
+    def load_daerah(self, *args, **kwargs ):
+        html_utama = self.req_html(self.url_utama, *args, **kwargs)
+        for el_provinsi in html_utama.find("select", {"id":  "search_prov"}).find_all("option"):
+            token_provinsi = el_provinsi.get("value")
+
+            data = {"x": token_provinsi}
+            html_kabupaten = self.req_html(self.url_kabupaten, self.POST, data=data)
+            if len(html_kabupaten.contents) <= 0 :
+                html_kabupaten = self.req_html(self.url_kabupaten, self.POST, data={"x":""})
+            
+            if len(html_kabupaten.contents) > 0:
+                for el_kabupaten in html_kabupaten.find_all("option"):
+                    self.data_daerah.update({
+                        el_kabupaten.text: {
+                            "provinsi": el_provinsi.text,
+                            "x": token_provinsi,
+                            "y": el_kabupaten.get("value")
+                        }
+                    })
+                 
+    def get(self, url, *args, **kwargs):
+        return self.session.get(url, *args, **kwargs)
+        
+    def post(self, url, *args, **kwargs):
+        return self.session.post(url, *args, **kwargs)
     
+    def req_html(self, url, method="GET" , *args, **kwargs):
 
-    if method == GET:
-        resp = sesi.get(url, *args, **kwargs)
-        while resp.headers.get("location", None) != None:
-            url = resp.headers.get("location")
-            resp = sesi.get(url, *args, **kwargs)
+        if method == self.GET:
 
+            self.history = self.get(url, *args, **kwargs)
+            self.cookies = self.history.cookies
+            return Soup(self.history.content.decode("utf-8"), features="lxml")
 
-        store[urlp.hostname] = resp.cookies
-        if resp.status_code == 200:
-            
-            return resp.json()
+        elif method == self.POST:
+
+            self.history = self.post(url, *args, **kwargs)
+            self.cookies = self.history.cookies
+            return Soup(self.history.content.decode("utf-8"), features="lxml")
+
+    def req_json(self, url, method="GET" , *args, **kwargs):
+
+        if method == self.GET:
+
+            self.history = self.get(url, *args, **kwargs)
+            self.cookies = self.history.cookies
+            return self.history.json()
+
+        elif method == self.POST:
+
+            self.history = self.post(url, *args, **kwargs)
+            self.cookies = self.history.cookies
+            return self.history.json()
+
+    def cari_kabupaten(self, kata, *args, **kwargs):
+        if len(self.data_daerah) <= 0 :
+            self.load_daerah(*args, **kwargs)
+
+        result = {}
+        if len(kata) <= 0:
+            return result
         else:
-            return {}
-
-    elif method == POST:
-        resp = sesi.post(url, *args, **kwargs)
-        while resp.headers.get("location", None) != None:
-            url = resp.headers.get("location")
-            resp = sesi.post(url, *args, **kwargs)
-
-        store[urlp.hostname] = {}
-        if resp.status_code == 200:
+            for kabupaten, data in self.data_daerah.items():
+                if kata.lower() in kabupaten.lower():
+                    result.update({kabupaten: data})
             
-            return resp.json()
+            return result
+
+    def cari_provinsi(self, kata, *args, **kwargs):
+        if len(self.data_daerah) <= 0 :
+            self.load_daerah(*args, **kwargs)
+
+        result = {}
+        if len(kata) <= 0:
+            return result
         else:
-            return {}
-
-def req_html(url, method, *args, **kwargs):
-    urlp = urlparse(url)
-    global store
-    global sesi
-
-    if urlp.hostname not in store:
-        store[urlp.hostname] = {}
-
-    if "cookies" not in kwargs and urlp.hostname in store:
-        kwargs["cookies"] = store[urlp.hostname] 
-    
-
-    if method == GET:
-        resp = sesi.get(url, *args, **kwargs)
-        while resp.headers.get("location", None) != None:
-            url = resp.headers.get("location")
-            resp = sesi.get(url, *args, **kwargs)
-
-
-        store[urlp.hostname] = resp.cookies
-        if resp.status_code == 200:
+            for kabupaten, data in self.data_daerah:
+                if kata.lower() in data.get("provinsi", "").lower():
+                    result.update({
+                        kabupaten: data
+                    })
             
-            return Soup(resp.content.decode("utf-8"), features="lxml")
-        else:
-            return Soup("", features="lxml")
+            return result
 
-    elif method == POST:
-        resp = sesi.post(url, *args, **kwargs)
-        while resp.headers.get("location", None) != None:
-            url = resp.headers.get("location")
-            resp = sesi.post(url, *args, **kwargs)
+    def sebulan(self, nama_kabupaten, tahun, bulan, *args, **kwargs):
+        if len(self.data_daerah) <= 0 :
+            self.load_daerah(*args, **kwargs)
 
-        store[urlp.hostname] = {}
-        if resp.status_code == 200:
+
+        if nama_kabupaten in self.data_daerah:
+            data = self.data_daerah[nama_kabupaten]
+
+            if nama_kabupaten in self.jadwal:
+                return self.jadwal[nama_kabupaten]
+            else:
+                data.pop("provinsi")
+                bulan = str(bulan).rjust(2, "0")
+                data.update({
+                    "thn": tahun,
+                    "bln": bulan
+                })
+                json_jadwal = self.req_json(self.url_jadwal, self.POST, data=data)
+                if len(json_jadwal) > 3:
+                    json_jadwal.pop("status")
+                    json_jadwal.pop("message")
+                    self.jadwal.update({
+                        nama_kabupaten: json_jadwal
+                    })
+
+                    return json_jadwal
+                   
+        return {}
+
+    def sehari(self, nama_kabupaten, tahun, bulan, tanggal, *args, **kwargs):
+        if len(self.data_daerah) <= 0 :
+            self.load_daerah(*args, **kwargs)
+        
+        bulan = str(bulan).rjust(2, "0")
+        tanggal = str(tanggal).rjust(2, "0")
+
+        sebulan = self.sebulan(nama_kabupaten, tahun, bulan, *args, **kwargs).copy()
+        if len(sebulan) > 0:
+            waktu = f"{str(tahun)}-{str(bulan)}-{str(tanggal)}"
+            if waktu in sebulan["data"]:
+                sebulan["data"] = {
+                    waktu: sebulan["data"].get(waktu)
+                }
+            else:
+                print("Gk ada", waktu, sebulan["data"].get(waktu))
+
+
             
-            return Soup(resp.content.decode("utf-8"), features="lxml")
-        else:
-            return Soup("", features="lxml")
+            return sebulan
 
-
-get_base = "https://bimasislam.kemenag.go.id/jadwalshalat"
-post_kabupaten = "https://bimasislam.kemenag.go.id/ajax/getKabkoshalat"
-post_jadwal = "https://bimasislam.kemenag.go.id/ajax/getShalatbln"
-
-cookies = {} 
-this = sesi.get(get_base)
-cookies = this.cookies
-
-
-html_base = req_html(get_base, GET, cookies=cookies)
-provinsi = {}
-for element in html_base.find("select", {"id":  "search_prov"}).find_all("option"):
-    provinsi.update({
-        element.text: {
-            "token": element.get("value"),
-            "kabupaten": {},
-            }
-    }) 
+        return {}
+        
