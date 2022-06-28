@@ -23,7 +23,7 @@ data_cookies = inisialisasi.cookies
 
 # ini adalah request kedua setelah kita mendapatkan cookies
 # <option></option> sudah di tampilkan oleh server
-ada = sesi.get(url_awal)
+ada = sesi.get(url_awal, cookies=data_cookies)
 print(sesi.content)
 
 # ... <select id="search_prov">\n\t
