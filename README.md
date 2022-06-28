@@ -3,9 +3,9 @@ Scraper jadwal sholat dari KEMENAG Indonesia.
 
 ## Inisialisasi & pengetahuan.
 
-Kemungkinan website KEMENAG menggunakan _framework_ PHP CI (_Code Igniter_). Setiap kali kita melakukan `request`, maka yang pertama kali di cek adalah `session` pada `cookies`. Jadi, jika `session` tidak ditemukan.
+Kemungkinan website KEMENAG menggunakan _framework_ PHP CI (_Code Igniter_). Setiap kali kita melakukan `request`, maka yang pertama kali di cek adalah `session` pada `cookies`.
 
-Maka halaman hanya akan dimuat secara standar, yaitu tanpa memuat `<option></option>` untuk pilihan Provinsi dan Kabupaten. Oleh sebab itu, ketika melakukan `request` pertama kali, kita harus menyimpan `cookies` tujuannya untuk di gunakan pada `request` berikutnya.
+Jadi, jika `session` tidak ditemukan, maka halaman hanya akan dimuat secara standar, yaitu tanpa memuat `<option></option>` untuk pilihan Provinsi dan Kabupaten. Oleh sebab itu, ketika melakukan `request` pertama kali, kita harus menyimpan `cookies` tujuannya untuk di gunakan pada `request` berikutnya.
 
 Misal :
 
