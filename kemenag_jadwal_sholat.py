@@ -98,7 +98,7 @@ class Sholat:
         if len(kata) <= 0:
             return result
         else:
-            for kabupaten, data in self.data_daerah:
+            for kabupaten, data in self.data_daerah.items():
                 if kata.lower() in data.get("provinsi", "").lower():
                     result.update({
                         kabupaten: data
