@@ -110,12 +110,12 @@ class Sholat:
         if len(self.data_daerah) <= 0 :
             self.load_daerah(*args, **kwargs)
 
+        bulanan_key = f"{nama_kabupaten}-{tahun}-{bulan}"
+        if bulanan_key in self.data_daerah:
+            data = self.data_daerah[bulanan_key]
 
-        if nama_kabupaten in self.data_daerah:
-            data = self.data_daerah[nama_kabupaten]
-
-            if nama_kabupaten in self.jadwal:
-                return self.jadwal[nama_kabupaten]
+            if bulanan_key in self.jadwal:
+                return self.jadwal[bulanan_key].copy()
             else:
                 data.pop("provinsi")
                 bulan = str(bulan).rjust(2, "0")
@@ -128,10 +128,10 @@ class Sholat:
                     json_jadwal.pop("status")
                     json_jadwal.pop("message")
                     self.jadwal.update({
-                        nama_kabupaten: json_jadwal
+                        bulanan_key: json_jadwal
                     })
 
-                    return json_jadwal
+                    return json_jadwal.copy()
                    
         return {}
 
