@@ -112,7 +112,7 @@ class Sholat:
 
         bulanan_key = f"{nama_kabupaten}-{tahun}-{bulan}"
         if bulanan_key in self.data_daerah:
-            data = self.data_daerah[bulanan_key]
+            data = self.data_daerah[nama_kabupaten]
 
             if bulanan_key in self.jadwal:
                 return self.jadwal[bulanan_key].copy()
