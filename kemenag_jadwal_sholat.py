@@ -110,19 +110,22 @@ class Sholat:
         if len(self.data_daerah) <= 0 :
             self.load_daerah(*args, **kwargs)
 
-        bulanan_key = f"{nama_kabupaten}-{tahun}-{bulan}"
-        if bulanan_key in self.data_daerah:
+
+        if nama_kabupaten in self.data_daerah:
             data = self.data_daerah[nama_kabupaten]
 
+            bulanan_key = f'{nama_kabupaten}-{tahun}-{bulan}'
             if bulanan_key in self.jadwal:
                 return self.jadwal[bulanan_key].copy()
             else:
-                data.pop("provinsi")
+                if "provinsi" in data:
+                    data.pop("provinsi")
                 bulan = str(bulan).rjust(2, "0")
                 data.update({
                     "thn": tahun,
                     "bln": bulan
                 })
+
                 json_jadwal = self.req_json(self.url_jadwal, self.POST, data=data)
                 if len(json_jadwal) > 3:
                     json_jadwal.pop("status")
@@ -142,7 +145,7 @@ class Sholat:
         bulan = str(bulan).rjust(2, "0")
         tanggal = str(tanggal).rjust(2, "0")
 
-        sebulan = self.sebulan(nama_kabupaten, tahun, bulan, *args, **kwargs).copy()
+        sebulan = self.sebulan(nama_kabupaten, tahun, bulan, *args, **kwargs)
         if len(sebulan) > 0:
             waktu = f"{str(tahun)}-{str(bulan)}-{str(tanggal)}"
             if waktu in sebulan["data"]:
@@ -153,4 +156,3 @@ class Sholat:
             return sebulan
 
         return {}
-        
